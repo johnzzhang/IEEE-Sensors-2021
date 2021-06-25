@@ -136,12 +136,15 @@ data10mmPhaseDegMean = mean(data10mmPhaseDeg,2);
 plot(frequency, data10mmMean, '.-');
 %errorbar(frequency,data10mmMean,data10mmStdDev);
 
+% plot PVDF minus pickup
+plot(frequency, data10mmMean - 10.^(dataAboveWater.Ch2MagdB/20), 'g.-');
+
 ylabel('voltage [V]');
 improvePlot();
 
 yyaxis right
-% plot for 12 mm depth
-for run = 8
+% plot for 10 mm depth
+for run = 7
     data = benthowaveData{run};
 
     % convert voltage to pressure
@@ -173,11 +176,14 @@ plot(frequency, data10mmMean./pressure, '.-');
 set(gca,'XScale','log');
 set(gca,'YScale','log');
 
+xlim([100 4400]);
 ylabel('mag [V/Pa]');
 xlabel('frequency [Hz]');
 
 subplot(212);
 plot(frequency, data10mmPhaseDegMean - pressurePhaseDeg, '.-');
+
+xlim([100 4400]);
 
 set(gca,'XScale','log');
 ylabel('phase [deg]');

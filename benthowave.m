@@ -109,7 +109,7 @@ set(gca,'YScale','log');
 
 xlabel('frequency [Hz]');
 ylabel('pressure [Pa]');
-legend('Benthowave h=12 mm','LDV h=12 mm');
+legend('LDV h=12 mm','Benthowave h=12 mm');
 improvePlot();
 
 
