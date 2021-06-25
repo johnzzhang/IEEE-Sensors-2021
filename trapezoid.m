@@ -7,7 +7,7 @@ numRuns = 11;
 trapezoidData = cell(numRuns,1);
 
 runSkip = 134;
-runLabels = 3905:134:5245;
+runLabels = 3905:runSkip:5245;
 
 % import all trapezoid data into the cell array
 for run = 1:numRuns
@@ -23,7 +23,7 @@ numRuns = 11;
 benthowaveData = cell(numRuns,1);
 
 runSkip = 134;
-runLabels = 2431:134:3771;
+runLabels = 2431:runSkip:3771;
 
 % import all benthowave data into the cell array
 for run = 1:numRuns
@@ -31,7 +31,6 @@ for run = 1:numRuns
     dataPath = ['data/' dataDir '/' experiment '/f' runNumber '.txt'];
     benthowaveData{run} = importfile(dataPath);
 end
-
 
 %% process and plot data
 % summary:
@@ -122,13 +121,16 @@ hold on;
 % 10 mm depth
 %%%%%%%%%%%%%%%%%%%%%%
 data10mm = zeros(length(dataAboveWater.Ch2MagdB), N);
+data10mmPhaseDeg = zeros(length(dataAboveWater.Ch2Phasecyc), N);
 for run = 6:8
    data10mm(:,run-5) = 10.^(trapezoidData{run}.Ch2MagdB/20);
+   data10mmPhaseDeg(:,run-5) = 360*trapezoidData{run}.Ch2Phasecyc;
 end
 
 % compute mean and standard deviation for each row
 data10mmStdDev = std(data10mm,[],2);
 data10mmMean = mean(data10mm,2);
+data10mmPhaseDegMean = mean(data10mmPhaseDeg,2);
 
 % plot 10 mm depth
 plot(frequency, data10mmMean, '.-');
@@ -148,6 +150,7 @@ for run = 8
 
     benthowaveVoltage = 10.^(data.Ch1MagdB/20); % [V}
     pressure = benthowaveVoltage/p2v/preampGain; % [Pa]
+    pressurePhaseDeg = 360*data.Ch1Phasecyc;
 
     plot(data.FreqHz, pressure, '.-');
 end
@@ -163,3 +166,22 @@ improvePlot();
 
 % pressure to voltage transfer function
 figure(3);
+hold on;
+subplot(211);
+plot(frequency, data10mmMean./pressure, '.-');
+
+set(gca,'XScale','log');
+set(gca,'YScale','log');
+
+ylabel('mag [V/Pa]');
+xlabel('frequency [Hz]');
+
+subplot(212);
+plot(frequency, data10mmPhaseDegMean - pressurePhaseDeg, '.-');
+
+set(gca,'XScale','log');
+ylabel('phase [deg]');
+xlabel('frequency [Hz]');
+
+improvePlot();
+

@@ -7,7 +7,7 @@ numRuns = 11;
 benthowaveData = cell(numRuns,1);
 
 runSkip = 134;
-runLabels = 2431:134:3771;
+runLabels = 421:runSkip:2297;
 
 % import all benthowave data into the cell array
 for run = 1:numRuns
