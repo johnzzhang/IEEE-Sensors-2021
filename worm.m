@@ -35,6 +35,77 @@ end
 % import spice
 spice = readtable('charge_amp_LT1792_three_stages.txt');
 
+%% worm analytical
+COMSOL_freq_top_electrode_import();
+
+w = 0.5e-3;
+l = 15e-3;
+d31_prime = 22e-12;
+d32_prime = 3e-12;
+d33_prime = -30e-12;
+
+E = 5.7e9;
+% add damping by making E complex
+zeta = [0 0.1 0.5 1];
+figure;
+subplot(2,1,1);
+ylabel('Magnitude [C/Pa]')
+for index = 1:length(zeta)
+    E = E + zeta(index)*E*1i;
+    nu = 0.35;
+    rho = 1780;
+
+    c = sqrt(E/rho);
+
+    P0 = 1; % Pascals
+
+    piezo_angle = 0;
+    d31 = cos(piezo_angle).^2*d31_prime+sin(piezo_angle).^2*d32_prime;
+    d32 = sin(piezo_angle).^2*d31_prime+cos(piezo_angle).^2*d32_prime;
+    d33 = d33_prime*ones(size(piezo_angle));
+
+    freq = logspace(log10(200),6,600);
+    ang_freq = 2*pi*freq_comsol';
+    k = ang_freq/c;
+
+    F11 = -P0*w*((1-2*nu)*tan(k*l)./k+2*nu*l);
+    F22 = -P0*w*l*ones(size(ang_freq));
+    F33 = F22;
+
+    Q31 = d31*F11;
+    Q32 = d32*F22;
+    Q33 = d33*F33;
+
+    Q = Q31+Q32+Q33;
+
+    hearing_range = freq_comsol < 20e3;
+
+    %cost_func = 'NRMSE';
+    %fit = goodnessOfFit(abs((Q(hearing_range))'),abs(Q_comsol((hearing_range))),cost_func);
+    %error = (1-fit)*100;
+
+    subplot(2,1,1);
+    hold on;
+    plot(freq_comsol,abs(Q),'-');
+    xlim([200 max(freq_comsol)]);
+    set(gca, 'YScale', 'log')
+    set(gca, 'XScale', 'log')
+    
+    subplot(2,1,2);
+    hold on;
+    plot(freq_comsol,180/pi*angle(Q),'-');
+    set(gca, 'YScale', 'linear')
+    set(gca, 'XScale', 'log')
+    xlabel('Frequency [Hz]')
+    ylabel('Phase [^\circ]')
+end
+hold off;
+subplot(2,1,1);
+plot(freq_comsol,abs(Q_comsol),'k.');
+legend([ '\zeta = ' + string(zeta) 'COMSOL']);
+    
+improvePlot();
+
 %% process and plot
 
 % summary:
