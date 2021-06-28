@@ -1,5 +1,24 @@
 importdata();
 
+%% Helmholtz equation
+shakeFreq = logspace(1,4);
+w = 2*pi*shakeFreq; % angular frequency
+h = 10e-3; % depth of sensor
+L = 20e-3; % length of vial
+g = 9.8;
+a = 1;
+x0 = a./(w.^2)
+
+c = 2000; % speed of sound in water
+rho = 1000; % mass density of water
+
+k = shakeFreq/c;
+
+pressure_acceleration = rho*a.*sin(k*h)./(k.*cos(k*L))+rho*g*x0;
+
+loglog(shakeFreq, abs(pressure_acceleration), '.-');
+
+
 %% process and plot data
 % summary:
 % fig. 1: frequency waterfall
@@ -60,8 +79,22 @@ for run = 1
     h = 12e-3; % depth [m]
 
     pressureTheoritical = abs(rho*position.*(g-(2*pi*data.FreqHz).^2*h));
+    % Helmholtz equation
+    x0 = 1e-3; % displacement amplitude of the shaker
+    shakeFreq = data.FreqHz;
+    w = 2*pi*shakeFreq; % angular frequency
+    L = 26e-3; % length of vial
 
+    c = 2000; % speed of sound in water
+    rho = 1000; % mass density of water
+
+    k = shakeFreq/c;
+
+    pressure_acceleration = rho*(g-w.^2.*sin(k*h)./(k.*cos(k*L)));
+    pressureHelmholtz = abs(position.*pressure_acceleration);
+    
     plot(data.FreqHz, pressureTheoritical, 'r.-');
+    plot(data.FreqHz, pressureHelmholtz, 'g.-');
 end
 
 % plot for 12 mm depth
@@ -83,7 +116,7 @@ set(gca,'YScale','log');
 
 xlabel('frequency [Hz]');
 ylabel('pressure [Pa]');
-legend('LDV h=12 mm','Benthowave h=12 mm');
+legend('LDV h=12 mm', 'Helmholtz', 'Benthowave h=12 mm');
 improvePlot();
 
 

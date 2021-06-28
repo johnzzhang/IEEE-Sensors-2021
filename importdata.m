@@ -24,3 +24,18 @@ end
 % 4. 4 mm down
 % ...
 % 11. 18 mm down
+
+dataDir = '20210624 sensor measurement';
+experiment = 'Worm';
+numRuns = 15;
+wormData = cell(numRuns,1);
+
+runSkip = 134;
+runLabels = 421:runSkip:2297;
+
+% import all worm data into the cell array
+for run = 1:numRuns
+    runNumber = num2str(runLabels(run));
+    dataPath = ['data/' dataDir '/' experiment '/f' runNumber '.txt'];
+    wormData{run} = importfile(dataPath);
+end

@@ -1,39 +1,47 @@
 %% import data
-clear; clc;
+importdata();
 
-dataDir = '20210624 sensor measurement';
-experiment = 'Worm';
-numRuns = 15;
-wormData = cell(numRuns,1);
+%% analytical circuit
 
-runSkip = 134;
-runLabels = 421:runSkip:2297;
+f = wormData{1}.FreqHz;
 
-% import all trapezoid data into the cell array
-for run = 1:numRuns
-    runNumber = num2str(runLabels(run));
-    dataPath = ['data/' dataDir '/' experiment '/f' runNumber '.txt'];
-    wormData{run} = importfile(dataPath);
-end
+s = tf('s');
 
-% import benthowave data
-dataDir = '20210624 sensor measurement';
-experiment = 'Benthowave';
-numRuns = 11;
-benthowaveData = cell(numRuns,1);
+R0 = 10e6;
 
-runSkip = 134;
-runLabels = 2431:runSkip:3771;
+R1 = 34e6;
+C1 = 10e-12;
 
-% import all benthowave data into the cell array
-for run = 1:numRuns
-    runNumber = num2str(runLabels(run));
-    dataPath = ['data/' dataDir '/' experiment '/f' runNumber '.txt'];
-    benthowaveData{run} = importfile(dataPath);
-end
+f1 = 1/(2*pi*R1*C1);
 
-% import spice
-spice = readtable('charge_amp_LT1792_three_stages.txt');
+R2 = 10e3;
+C2 = 100e-9;
+
+f2 = 1/(2*pi*R2*C2);
+
+R3 = 100e3;
+C3 = 50e-12;
+
+f3 = 1/(2*pi*R3*C3);
+
+R4 = 1e3;
+R5 = 100e3;
+
+% first stage
+Z1 = R1/(s*C1)/(R1+1/(s*C1));
+S1 = -s*Z1; % transimpedance
+
+% second stage
+Z2 = R2 + 1/(s*C2);
+Z3 = R3/(s*C3)/(R3+1/(s*C3));
+
+S2 = -Z3/Z2;
+
+% final stage
+S3 = -R5/R4;
+
+[m, p] = bode(S1*S2*S3, 2*pi*f);
+
 
 %% worm analytical
 COMSOL_freq_top_electrode_import();
@@ -181,8 +189,12 @@ hold on;
 plot(frequency, data10mmMean./pressure, 'r.-');
 
 % plot charge amp and 
-magicNum = 2e-15;
-plot(spice.Freq, magicNum*10.^(spice.Mag/20), 'k.-');
+magicNum = 1e-14;
+plot(frequency, magicNum*m(:), 'k.-');
+
+% plot new low freq data
+dataLowFreq = readtable('low_freq_PVDF.csv');
+plot(dataLowFreq.f, dataLowFreq.m./(pressure(1:length(dataLowFreq.m))), 'b.-');
 
 set(gca,'XScale','log');
 set(gca,'YScale','log');
