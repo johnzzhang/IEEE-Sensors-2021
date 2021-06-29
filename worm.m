@@ -114,12 +114,109 @@ legend([ '\zeta = ' + string(zeta) 'COMSOL']);
     
 improvePlot();
 
+close all;
+
+%% Analytical
+f = benthowaveData{1}.FreqHz;
+depths = 0:2:18;
+depths = 1e-3*depths;
+
+% create pressure distribution from measured data
+pressureDistribution = cell(length(f),1);
+
+pressureMatrix = zeros(length(depths), length(f));
+% 0 to 18 [mm]
+for run = 1:length(depths)
+    data = benthowaveData{run};
+
+    % convert voltage to pressure
+    p2v = 10^(-223.3/20)*1e6; % BII-7181 [V/Pa]
+    preampGain = 10^(60/20);  % BII-1092
+
+    benthowaveVoltage = 10.^(data.Ch1MagdB/20); % [V}
+    pressure = benthowaveVoltage/p2v/preampGain; % [Pa]
+
+    pressureMatrix(run,:) = pressure;
+end
+
+% create interpolated pressure
+for i = 1:length(f)
+   pressureDistribution{i} = @(x) interp1(depths,pressureMatrix(:,i),x);
+end
+
+% analytical worm
+w = 0.5e-3;
+l = 15e-3;
+d31 = 3e-12;
+d32 = 3e-12;
+d33 = -30e-12;
+
+E = 5.6e9;
+nu = 0.37;
+rho = 1780;
+
+s11 = 1/E;
+s12 = -nu/E;
+s13 = s12;
+
+c = sqrt(E/rho);
+
+k = (2*pi*f)/c;
+
+h = 10e-3;
+
+% part without pressure varying
+Q = -w*d31/s11*(s11+s12+s13).*pressureDistribution{i}(h).*tan(k*l)./k;
+Qpressure = zeros(size(Q));
+
+for i = 1:length(Q)
+    Qpressure(i) = Q(i) + w*((s12+s13)/s11*d31-d32-d33)*integral(pressureDistribution{i}, 0, 10e-3, 'ArrayValued', true);
+end
+
+% analytical circuit
+s = tf('s');
+
+R0 = 10e6;
+
+R1 = 34e6;
+C1 = 10e-12;
+
+f1 = 1/(2*pi*R1*C1);
+
+R2 = 10e3;
+C2 = 100e-9;
+
+f2 = 1/(2*pi*R2*C2);
+
+R3 = 100e3;
+C3 = 50e-12;
+
+f3 = 1/(2*pi*R3*C3);
+
+R4 = 1e3;
+R5 = 100e3;
+
+% first stage
+Z1 = R1/(s*C1)/(R1+1/(s*C1));
+S1 = -s*Z1; % transimpedance
+
+% second stage
+Z2 = R2 + 1/(s*C2);
+Z3 = R3/(s*C3)/(R3+1/(s*C3));
+
+S2 = -Z3/Z2;
+
+% final stage
+S3 = -R5/R4;
+
+[m, p] = bode(S1*S2*S3, 2*pi*f);
+
 %% process and plot
 
 % summary:
 % fig. 1: voltage in vessel
-close all;
-
+% close all;
+% 
 figure(1);
 hold on;
 
@@ -181,20 +278,21 @@ xlabel('frequency [Hz]');
 xlim([100 10000]);
 
 improvePlot();
+close all;
 
-% pressure to voltage transfer function
+%% pressure to voltage transfer function
 figure(2);
+
+xlims = [200 20e3];
+
 subplot(211);
 hold on;
-plot(frequency, data10mmMean./pressure, 'r.-');
+plot(f, data10mmMean./pressure, 'r.-');
 
-% plot charge amp and 
-magicNum = 1e-14;
-plot(frequency, magicNum*m(:), 'k.-');
+% plot voltage from analytical
+plot(f, m(:).*abs(Qpressure), 'k.-');
 
-% plot new low freq data
-dataLowFreq = readtable('low_freq_PVDF.csv');
-plot(dataLowFreq.f, dataLowFreq.m./(pressure(1:length(dataLowFreq.m))), 'b.-');
+xlim(xlims);
 
 set(gca,'XScale','log');
 set(gca,'YScale','log');
@@ -203,8 +301,11 @@ ylabel('mag [V/Pa]');
 xlabel('frequency [Hz]');
 
 subplot(212);
-plot(frequency, data10mmPhaseDegMean - pressurePhaseDeg, 'r.-');
+wormPhase = data10mmPhaseDegMean - pressurePhaseDeg;
+wormPhase(2) = wormPhase(1) + 360; % manual unwrap
+plot(frequency, unwrap(wormPhase), 'r.-');
 
+xlim(xlims);
 set(gca,'XScale','log');
 ylabel('phase [deg]');
 xlabel('frequency [Hz]');
