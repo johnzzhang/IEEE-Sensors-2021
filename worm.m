@@ -47,7 +47,7 @@ c = sqrt(E/rho);
 
 k = (2*pi*f)/c;
 
-h = 10e-3;
+h = 15e-3;
 
 % part without pressure varying
 Q = zeros(size(f));
@@ -109,6 +109,25 @@ frequency = wormData{1}.FreqHz;
 %%%%%%%%%%%%%%%%%%%%%%
 dataAtWaterLine = wormData{1};
 
+data0mmMean = 10.^(dataAtWaterLine.Ch2MagdB/20);
+data20mmMean = 10.^(wormData{14}.Ch2MagdB/20);
+
+%%%%%%%%%%%%%%%%%%%%%%
+% 5 mm depth
+%%%%%%%%%%%%%%%%%%%%%%
+N = 3;
+data5mm = zeros(length(dataAtWaterLine.Ch2MagdB), N);
+data5mmPhaseDeg = zeros(length(dataAtWaterLine.Ch2Phasecyc), N);
+for run = 3:5
+   data5mm(:,run-2) = 10.^(wormData{run}.Ch2MagdB/20);
+   data5mmPhaseDeg(:,run-2) = 360*wormData{run}.Ch2Phasecyc;
+end
+
+% compute mean and standard deviation for each row
+data5mmStdDev = std(data5mm,[],2);
+data5mmMean = mean(data5mm,2);
+data5mmPhaseDegMean = mean(data5mmPhaseDeg,2);
+
 %%%%%%%%%%%%%%%%%%%%%%
 % 10 mm depth
 %%%%%%%%%%%%%%%%%%%%%%
@@ -125,6 +144,21 @@ data10mmStdDev = std(data10mm,[],2);
 data10mmMean = mean(data10mm,2);
 data10mmPhaseDegMean = mean(data10mmPhaseDeg,2);
 
+%%%%%%%%%%%%%%%%%%%%%%
+% 15 mm depth
+%%%%%%%%%%%%%%%%%%%%%%
+N = 3;
+data15mm = zeros(length(dataAtWaterLine.Ch2MagdB), N);
+data15mmPhaseDeg = zeros(length(dataAtWaterLine.Ch2Phasecyc), N);
+for run = 9:11
+   data15mm(:,run-8) = 10.^(wormData{run}.Ch2MagdB/20);
+   data15mmPhaseDeg(:,run-8) = 360*wormData{run}.Ch2Phasecyc;
+end
+
+% compute mean and standard deviation for each row
+data15mmStdDev = std(data15mm,[],2);
+data15mmMean = mean(data15mm,2);
+data15mmPhaseDegMean = mean(data15mmPhaseDeg,2);
 
 for run = 7
     data = benthowaveData{run};
@@ -141,19 +175,23 @@ end
 %% pressure to voltage transfer function
 figure(2);
 
-xlims = [200 20e3];
+xlims = [1e3 10e3];
 
 %subplot(211);
 hold on;
-plot(f, data10mmMean./pressure, 'r.-');
-%errorbar(frequency,data10mmMean./pressure,data10mmStdDev./pressure);
+plot(f, data0mmMean, 'k.-');
+errorbar(frequency,data5mmMean,data5mmStdDev,'r.-');
+errorbar(frequency,data10mmMean,data10mmStdDev,'g.-');
+errorbar(frequency,data15mmMean,data15mmStdDev,'b.-');
+plot(f, data20mmMean, 'm.-');
+legend('0','5','10','15','20');
 
 % plot voltage from analytical
 %plot(f, m(:).*abs(Qpressure), 'm.-');
 %plot(f, m(:).*abs(Q), 'g.-');
-plot(f, m(:).*abs(Qtotal), 'k.-');
+plot(f, m(:).*abs(Qtotal), 'rx');
 
-legend('measured','theory');
+%legend('measured','theory');
 
 xlim(xlims);
 
@@ -176,4 +214,17 @@ set(gca,'XScale','log');
 %ylabel('phase [deg]');
 xlabel('frequency [Hz]');
 
+improvePlot();
+
+%% voltage vs depth
+figure;
+depths = [0 5 10 15 20];
+idx = 10;
+voltages = [data0mmMean(idx) data5mmMean(idx) data10mmMean(idx) data15mmMean(idx) data20mmMean(idx)];
+plot(depths, voltages, '.-');
+hold on;
+noise = 10.^(noiseData{4}.Ch2MagdB/20);
+plot(depths,noise(10),'rx');
+xlabel('depth [mm]');
+ylabel('voltage [V]');
 improvePlot();

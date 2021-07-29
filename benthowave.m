@@ -7,7 +7,7 @@ h = 10e-3; % depth of sensor
 L = 20e-3; % length of vial
 g = 9.8;
 a = 1;
-x0 = a./(w.^2)
+x0 = a./(w.^2);
 
 c = 2000; % speed of sound in water
 rho = 1000; % mass density of water
@@ -31,6 +31,7 @@ close all;
 figure(1);
 hold on;
 
+numRuns = 11;
 for run = 1:2:numRuns
     data = benthowaveData{run};
 

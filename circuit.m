@@ -76,15 +76,15 @@ for run = 1
     
     subplot(211);
     hold on;
-    plot(data.FreqHz, vout./vin, 'rx');
-    plot(f, m(:), 'k-');
+    plot(data.FreqHz,  2*pi*data.FreqHz.*R0.*vout./vin, 'rx');
+    plot(f, 2*pi*f'.*R0.*m(:), 'k-');
     set(gca,'XScale','log');
     set(gca,'YScale','log');
     ylabel('mag [V/V]');
 
     subplot(212);
     hold on;
-    plot(data.FreqHz, voutPhaseDeg-vinPhaseDeg, 'rx');
+    plot(data.FreqHz,(voutPhaseDeg-vinPhaseDeg), 'rx');
     plot(f, p(:), 'k-');
     set(gca,'XScale','log');
     ylabel('phase [deg]');
