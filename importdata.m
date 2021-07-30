@@ -88,3 +88,8 @@ for run = 1:numRuns
     dataPath = ['data/' dataDir '/f' runNumber '.txt'];
     shieldedWormData{run} = importfile(dataPath);
 end
+
+%% import pressure data
+dataDir = 'pressure';
+dataPath = ['data/' dataDir '/15_mm_water_accel_benthowave_LDV_20_kHz.txt'];
+pressureData = importfile(dataPath);
